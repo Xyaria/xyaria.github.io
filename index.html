@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>CSV to JSON</title>
+  <style>
+    .inputs {
+      padding: 8px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 160px;
+    }
+    input[type="file"] {
+      color: transparent;
+      width: 100%;
+    }
+    input[type="text"] {
+      border-radius: 10px;
+      padding: 8px 12px;
+      border: none;
+      outline: none;
+      box-shadow: 0 1px 0 1px hsla(0, 0%, 0%, 0.12);
+      font-weight: 600;
+    }
+    input[type="text"]:focus {
+      box-shadow: 0 3px 2px 2px hsla(0, 0%, 0%, 0.12);
+      transition: 0.5s;
+    }
+    button:not(.theme), input::file-selector-button {
+      cursor: pointer;
+      background-color: green;
+      border: 1px solid color-mix(in srgb, green 70%, white);
+      border-radius: 8px;
+      color: white;
+      padding: 8px 16px;
+      width: 100%;
+      font-weight: 600;
+    }
+    input[type="checkbox"] {
+      color: currentColor;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid currentColor;
+      border-radius: 5px;
+      background-color: transparent;
+      display: inline-block;
+      position: relative;
+      margin-right: 10px;
+      cursor: pointer;
+    }
+    input[type="checkbox"]:before {
+      content: "";
+      background-color: currentColor;
+      display: block;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+    }
+    input[type="checkbox"]:checked:before {
+      transform: translate(-50%, -50%) scale(1);
+    }
+    .checkbox-label {
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+    }
+
+    .message {
+      height: 50px;
+      padding: 8px 16px;
+      text-shadow: 0 1px 2px hsla(0, 100%, 100%, 0.3);
+    }
+    .message.error {
+      color: darkred;
+    }
+    .message.success {
+      color: green;
+    }
+
+    .result {
+      overflow: hidden;
+      width: 100%;
+      min-width: 50%;
+      height: 500px;
+      border: 1px solid black;
+      background-color: whitesmoke;
+      color: #121212;
+    }
+    pre {
+      margin: 0;
+      height: 500px;
+      width: 100%;
+      min-width: 50%;
+      overflow: scroll;
+      background-color: whitesmoke;
+      color: #121212;
+    }
+    .pre {
+      margin-top: 8px;
+      width: fit-content;
+      height: fit-content;
+      white-space: pre-wrap;
+      background-color: whitesmoke;
+      color: #121212;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 11px;
+    }
+
+    details {
+      display: flex;
+      gap: 8px;
+    }
+    details > * {
+      margin: 6px 0;
+    }
+
+    body {
+      display: flex;
+      gap: 24px;
+      font-weight: 500;
+    }
+    body:not(.light) {
+      background-color: #33303e;
+      color: white;
+    }
+    body:not(.light) .theme svg {
+      fill: whitesmoke
+    }
+    body.light {
+      background-color: whitesmoke;
+      color: #121212;
+    }
+    body.light .theme svg {
+      fill: #121212;
+    }
+
+    .config {
+      width: fit-content;
+      display: flex;
+    }
+    .config.right {
+      width: 100%;
+      flex-direction: column; 
+      gap: 16px
+    }
+
+    table {
+      border: 1px solid #ddd;
+      border-collapse: collapse;
+    }
+    th {
+      text-align: left;
+      background-color: #ddd;
+      color: #121212;
+    }
+    td, th {
+      border: 1px solid #ddd;
+      padding: 4px 6px;
+    }
+
+    .theme {
+      position: absolute;
+      top: 12px;right: 12px;
+      width: 30px; height: 30px;
+      border: none;
+      border-radius: 50%;
+      background-color: transparent;
+      padding: 0;
+      cursor: pointer;
+      box-shadow: 0 1px 0 1px hsla(0, 0%, 0%, 0.12);
+    }
+    .theme:hover {
+      transform: scale(1.1);
+      box-shadow: 0 3px 2px 2px hsla(0, 0%, 0%, 0.12);
+    }
+
+  </style>
+</head>
+<body>
+  <button class="theme" onclick="body.classList.toggle('light')">
+    <svg id="svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="30" height="30" viewBox="0, 0, 400,400"><g id="svgg"><path id="path0" d="M174.000 55.000 L 149.060 80.000 114.530 80.000 L 80.000 80.000 80.000 114.472 L 80.000 148.944 54.529 174.472 L 29.058 200.000 54.529 225.528 L 80.000 251.056 80.000 285.528 L 80.000 320.000 114.472 320.000 L 148.944 320.000 174.472 345.471 L 200.000 370.942 225.528 345.471 L 251.056 320.000 285.528 320.000 L 320.000 320.000 320.000 285.528 L 320.000 251.056 345.471 225.528 L 370.942 200.000 345.471 174.472 L 320.000 148.944 320.000 114.472 L 320.000 80.000 285.470 80.000 L 250.940 80.000 226.000 55.000 C 212.283 41.250,200.583 30.000,200.000 30.000 C 199.417 30.000,187.717 41.250,174.000 55.000 M242.256 111.401 C 336.589 158.145,304.863 297.000,199.849 297.000 L 174.698 297.000 157.751 288.602 C 76.534 248.358,86.031 133.024,172.894 104.702 C 190.981 98.805,223.095 101.907,242.256 111.401 M175.525 133.028 C 108.108 157.791,118.867 263.767,189.391 269.616 L 200.000 270.495 200.000 200.248 L 200.000 130.000 191.500 130.141 C 186.825 130.218,179.636 131.517,175.525 133.028 " stroke="none" fill-rule="evenodd"></path></g></svg>
+  </button>
+  <div class="config">
+    <div class="inputs">
+      <input type="file" title="" onchange="loadFile(this.files[0])">
+      <button onclick="copyAsText()">Copy result</button>
+      <button onclick="downloadJson('test')">Download result</button>
+      <div class="message"></div>
+    </div>
+  </div>
+  <div class="result"></div>
+  <div class="config right">
+    <details class="options" open>
+      <summary>Options</summary>
+      <label for="include-null" class="checkbox-label">
+        <input type="checkbox" name="include-null" onchange="includeNull = !includeNull"/>
+        Include null values
+      </label>
+      <label for="to-array" class="checkbox-label">
+        <input type="checkbox" name="to-array" checked onchange="toArray = !toArray"/>
+        Convert to JSON Array
+      </label>
+      <label for="convert-values" class="checkbox-label">
+        <input type="checkbox" name="convert-values" checked onchange="convertType = !convertType"/>
+        Convert string to primary types
+      </label>
+      <label for="array-separator">
+        Array Separator<br>
+        <input type="text" name="array-separator" value="|" onchange="arraySeparator = this.value" />
+      </label>
+      <label for="column-separator">
+        Column Separator<br>
+        <input type="text" name="column-separator" value="," onchange="columnSeparator = this.value" />
+      </label>
+      <label for="object-delimiter">
+        Object Delimiter<br>
+        <input type="text" name="object-delimiter" value="." onchange="objectDelimiter = this.value" />
+      </label>
+    </details>
+  </div>
+  <script>
+    let headers;
+    let json = [];
+    let string_el = "";
+    let filename = "";
+
+    let includeNull = false;
+    let convertType = true;
+    let toArray = true;
+
+    let arraySeparator = '\|';
+    let columnSeparator = '\,';
+    let objectDelimiter = '\.';
+
+    function copyAsText() {
+      let el = document.querySelector('.result pre');
+      if(!el) {
+        writeMessage("✘ ERROR: No file selected", "error");
+        return;
+      }
+      navigator.clipboard.writeText(el.innerHTML)
+      .then(() => {
+        writeMessage("✔ SUCCESS: JSON copied to clipboard", "success");
+      })
+      .catch((err) => {
+        writeMessage("✘ "+ err, "error");
+      });
+    }
+
+    function writeMessage(message, className = null) {
+      let classes = ['success', 'error'];
+      let div = document.querySelector(".message");
+      classes.forEach(e => div.classList.remove(e));
+      if(className) div.classList.add(className);
+      div.innerHTML = message;
+    }
+    
+    function downloadJson() {
+      let file = new Blob([string_el], {type: 'application/json'});
+      let a = document.createElement("a");
+      let url = URL.createObjectURL(file);
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function() {
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);  
+      }, 0); 
+    }
+
+    function formatResult() {
+      let result = document.querySelector('.result');
+      json.forEach((e, index) => {
+        string_el += JSON.stringify(e, null, 2);
+        if (index != json.length-1) {
+          string_el += ',\n';
+        }
+      });
+      if(toArray) string_el = "[" + string_el + "]";
+      let el = document.createElement('pre');
+      el.innerHTML = string_el;
+      result.appendChild(el);
+      writeMessage('');
+    }
+
+    async function loadFile(file) {
+      writeMessage("Loading...");
+
+      let text = await file.text();
+      filename = await file.name.split('.').slice(0, 1)[0];
+      let text_array = text.split('\r\n');
+
+      headers = text_array[0].split(columnSeparator);
+
+      text_array = text_array.slice(1);
+      text_array.forEach(building => {
+        if(building != '') {
+          let line = building.split(columnSeparator);
+          let object = getFormattedLine(line);
+          json.push(object)
+        }
+      });
+      formatResult();
+    }
+
+    function getFormattedLine(line) {
+      let object = {};
+      let baseKey = null;
+      if(headers[0] === '_key') {
+        headers = headers.slice(1);
+        baseKey = line[0];
+        object = {[baseKey]: {}};
+      }
+      headers.forEach((key, i) => {
+        let rawValue = baseKey ? line[i+1] : line[i];
+        let value = rawValue.includes(arraySeparator) ? rawValue.split(arraySeparator) : rawValue;
+        if (convertType) value = rawValue == "" ? null : !isNaN(+rawValue) ? +rawValue : rawValue === 'true' ? true : rawValue === 'false' ? false : rawValue.includes(arraySeparator) ? rawValue.split(arraySeparator) : rawValue;
+
+        if(includeNull) Object.assign((baseKey ? object[baseKey] : object), getObject((baseKey ? object[baseKey] : object), key, value));
+        else if((value !== null && convertType) || (value !== "" && !convertType)) Object.assign((baseKey ? object[baseKey] : object), getObject((baseKey ? object[baseKey] : object), key, value));
+      })
+      return object;
+    }
+
+    function getObject(object, key, value) {
+      let toMerge = object ?? {};
+      if(!key.includes(objectDelimiter)) {
+        toMerge = {[key]: value};
+        return toMerge;
+      }
+
+      let mainKey = key.split(objectDelimiter)[0];
+      let rest = key.split(objectDelimiter).slice(1).join(objectDelimiter);
+      
+      if(rest == '_key') {
+        if(value == null) return toMerge;
+        Object.assign(toMerge, {[mainKey]: {}});
+        toMerge[mainKey] = {[value]: null};
+        return toMerge;
+      }
+      else if(rest == '_value') {
+        if(toMerge[mainKey] == null) {
+          toMerge[mainKey] = null;
+          return toMerge;
+        }
+        let mergeKey = Object.keys(toMerge[mainKey])[0];
+        toMerge[mainKey] = {[mergeKey]: value};
+        return toMerge;
+      }
+
+      toMerge[mainKey] = getObject(toMerge[mainKey], rest, value);
+      return toMerge;
+    }
+  </script>
+</body>
+</html>
