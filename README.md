@@ -9,7 +9,7 @@ Convert .csv files into .json.
 - variable key/value support
 
 ### Usage
-Download and open the `index.html`, or go to [xyaria.github.io](https://wyaria.github.io).  
+Download and open the `index.html`, or go to [xyaria.github.io](https://xyaria.github.io).  
 Configure the app with the options on the right.  
 Click on "Open file" and select your .csv.  
 
